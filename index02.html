@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-Hant">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>豪華刮刮樂</title>
+		<link rel="stylesheet" href="styles.css">
+		
+		<!-- small inline tweaks (kept minimal) -->
+		<style>
+			/* ensure canvas is on top where needed */
+			#scratch{touch-action: none;}
+			/* 鈔票和硬幣的細節樣式 */
+			.money-note::before {
+				content: '';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 70%;
+				height: 70%;
+				border: 2px solid rgba(180,220,140,0.3);
+				border-radius: 4px;
+			}
+			.money-note::after {
+				content: '$';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				font-size: 24px;
+				color: rgba(120,180,80,0.25);
+				font-weight: bold;
+				text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+			}
+			.money-note.small::after {
+				font-size: 18px;
+			}
+			.coin::before {
+				content: '';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 80%;
+				height: 80%;
+				border: 2px solid rgba(255,200,80,0.4);
+				border-radius: 50%;
+			}
+			.coin::after {
+				content: '¥';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				font-size: 20px;
+				color: rgba(180,120,20,0.35);
+				font-weight: bold;
+				text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+			}
+			/* history record styles */
+			.r-count {
+				background: #ffb84d;
+				color: #4a3000;
+				padding: 1px 6px;
+				border-radius: 8px;
+				margin-left: 8px;
+				font-size: 0.9em;
+				font-weight: bold;
+			}
+			.r-time {
+				font-size: 0.9em;
+				opacity: 0.8;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="stage">
+			<div class="coins" aria-hidden></div>
+			<!-- 裝飾元素：鈔票與硬幣（放入舞台內以確保可見） -->
+			<div class="money-note" aria-hidden><div class="note-pattern"></div></div>
+			<div class="money-note small" aria-hidden><div class="note-pattern"></div></div>
+			<div class="coin spin" aria-hidden>
+				<div class="coin-shine"></div>
+				<div class="coin-edge"></div>
+			</div>
+			<div class="title">
+				<div class="logo">豪禮</div>
+				<div>
+					<h1 class="neon">豪華刮刮樂</h1>
+					<div class="subtitle">刮一刮，看看你是不是本期頭獎得主！支援觸控與滑鼠</div>
+				</div>
+			</div>
+
+			<div class="ticket-wrap">
+				<div class="ticket" id="ticket">
+					<div class="prize" id="prizeArea">
+						<div class="label">您的獎品</div>
+						<div class="amount" id="prizeText">準備中...</div>
+					</div>
+
+						<!-- canvas 覆蓋在獎品上方作為刮刮樂遮罩 (只覆蓋獎品區) -->
+						<canvas id="scratch"></canvas>
+
+						<div class="hint">用滑鼠或手指在上方刮開銀灰區塊，刮開一定面積即可揭曉！</div>
+				</div>
+
+				<div style="width:300px;min-width:240px;color:#f8e8c6">
+					<h3 style="margin-top:0">說明</h3>
+					<p style="color:#f1dca0">這張刮刮樂使用畫布遮罩模擬刮除效果。每次會隨機選一個獎項（含鼓勵獎）。刮開達到門檻後自動揭露並播放慶祝動畫。</p>
+					<ul style="color:#f8e8c6">
+						<li>支援手機觸控與桌面滑鼠</li>
+						<li>點「再玩一次」可以重置</li>
+						<li>若希望完整揭開，可按「查看結果」</li>
+					</ul>
+					<footer>祝你好運，暴發在望 🤑</footer>
+				</div>
+			</div>
+			<!-- 控制按鈕：放在刮刮卡外，避免被遮罩覆蓋 -->
+			<div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+				<button class="btn" id="resetBtn">再玩一次</button>
+				<button class="btn secondary" id="revealBtn">直接顯示結果</button>
+				<button class="btn" id="historyToggle">紀錄</button>
+				<div style="margin-left:8px;color:#f1dca0;font-weight:700">按鈕也支援鍵盤：按 R 重置，按 V 顯示結果</div>
+				<!-- 近期得獎顯示：直接顯示最近幾筆，使用者可以不用開歷史面板 -->
+				<div id="recentList" style="margin-left:14px;display:flex;gap:8px;align-items:center"></div>
+			</div>
+		</div>
+
+		<div class="modal" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+			<div id="modalTitle" style="font-size:20px;font-weight:900">揭曉結果</div>
+			<div id="modalBody" style="margin-top:8px;font-size:18px"></div>
+			<div style="margin-top:12px;text-align:right">
+				<button class="btn" id="closeModal">好棒</button>
+			</div>
+		</div>
+
+		<div class="confetti" id="confetti"></div>
+
+
+		<!-- 歷史紀錄面板（預設隱藏於 CSS，可用按鈕 toggle 顯示） -->
+		<div class="history-panel" id="historyPanel" style="display:none;">
+			<h4>過去刮卡紀錄</h4>
+			<ul class="history-list" id="historyList">
+				<li class="history-empty">載入中…</li>
+			</ul>
+			<div class="history-actions">
+				<button class="btn secondary" id="clearHistoryBtn">清除紀錄</button>
+				<button class="btn" id="closeHistoryBtn">關閉</button>
+			</div>
+		</div>
+
+		<script>
+			// 小合約
+			// - 讀取畫面尺寸，建立 canvas 遮罩
+			// - 支援 pointer events (mouse/touch)
+			// - 紀錄刮除面積，超過門檻自動 reveal
+
+			(function(){
+				const prizes = [
+					{text:'8888 元現金', weight:1, big:true},
+					{text:'iPhone 1 支', weight:1, big:true},
+					{text:'500 元購物金', weight:3},
+					{text:'雞排一個（兌換券）', weight:6},
+					{text:'再接再厲，明天見', weight:30},
+					{text:'Lucky 折扣 85 折', weight:8},
+					{text:'VIP 會員 30 天', weight:5}
+				];
+
+				const prizeTextEl = document.getElementById('prizeText');
+				const canvas = document.getElementById('scratch');
+				const ticket = document.getElementById('ticket');
+				const prizeArea = document.getElementById('prizeArea');
+				const resetBtn = document.getElementById('resetBtn');
+				const revealBtn = document.getElementById('revealBtn');
+				const modal = document.getElementById('resultModal');
+				const modalBody = document.getElementById('modalBody');
+				const closeModal = document.getElementById('closeModal');
+				const confettiRoot = document.getElementById('confetti');
+
+				let ctx, isDrawing=false, revealed=false, prize=null;
+
+				function pickPrize(){
+					// weighted random
+					const pool=[];prizes.forEach(p=>{for(let i=0;i<p.weight;i++)pool.push(p)});
+					const sel = pool[Math.floor(Math.random()*pool.length)];
+					prize = sel;
+					prizeTextEl.textContent = sel.text;
+				}
+
+				let lastPos = null;
+				function resizeCanvas(){
+					// 只覆蓋獎品區 (prizeArea)，避免遮住按鈕/說明
+					const tRect = ticket.getBoundingClientRect();
+					const pRect = prizeArea.getBoundingClientRect();
+					const left = pRect.left - tRect.left;
+					const top = pRect.top - tRect.top;
+					const w = Math.min(800, Math.max(120, Math.floor(pRect.width)));
+					const h = Math.max(80, Math.floor(pRect.height));
+
+					// 支援 DPR 以顯得更細緻
+					const dpr = window.devicePixelRatio || 1;
+					canvas.style.position='absolute';
+					canvas.style.left = left + 'px';
+					canvas.style.top = top + 'px';
+					canvas.style.zIndex = 3;
+					canvas.style.width = w + 'px';
+					canvas.style.height = h + 'px';
+					canvas.width = Math.floor(w * dpr);
+					canvas.height = Math.floor(h * dpr);
+					const ctx2 = canvas.getContext('2d');
+					ctx2.setTransform(dpr,0,0,dpr,0,0);
+					drawMask();
+				}
+
+				function drawMask(){
+					ctx = canvas.getContext('2d');
+					// draw silver scratch layer with texture (in CSS pixels thanks to setTransform)
+					const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+					g.addColorStop(0,'#bdbdbd');g.addColorStop(1,'#d6d6d6');
+					ctx.fillStyle = g;
+					ctx.fillRect(0,0,canvas.width,canvas.height);
+					// metallic streaks: short slanted strokes to imitate lamination
+					ctx.save();
+					ctx.globalAlpha = 0.14;
+					for(let i=0;i<120;i++){
+						ctx.beginPath();
+						const x = Math.random()*canvas.width;
+						const y = Math.random()*canvas.height;
+						const len = 20 + Math.random()*80;
+						const angle = (Math.PI/12) * (Math.random()*2-1);
+						ctx.moveTo(x,y);
+						ctx.lineTo(x+Math.cos(angle)*len, y+Math.sin(angle)*len);
+						ctx.strokeStyle = (Math.random()>0.5)?'rgba(255,255,255,0.25)':'rgba(0,0,0,0.12)';
+						ctx.lineWidth = 1 + Math.random()*2;
+						ctx.stroke();
+					}
+					ctx.restore();
+					// add fine speckles
+					for(let i=0;i<600;i++){
+						ctx.fillStyle = 'rgba(255,255,255,'+(Math.random()*0.06)+')';
+						ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, Math.random()*1.6+0.3, Math.random()*1.6+0.3);
+					}
+					// set composite so subsequent strokes erase (像真實刮掉金屬層)
+					ctx.globalCompositeOperation = 'destination-out';
+					ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+				}
+
+				function pointerDown(e){
+					if(revealed) return; isDrawing=true; lastPos = getPointerPos(e);
+					// immediate small mark
+					scratchDot(lastPos);
+				}
+				function pointerUp(e){isDrawing=false; lastPos=null; checkReveal();}
+				function pointerMove(e){ if(!isDrawing) return; const pos = getPointerPos(e); scratchLine(lastPos,pos); lastPos = pos; }
+
+				function getPointerPos(e){
+					const rect = canvas.getBoundingClientRect();
+					const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+					return {x: (p.clientX - rect.left) , y: (p.clientY - rect.top)};
+				}
+
+				function scratchDot(pos){
+					const r = 24 + Math.random()*16;  // 增加基本點的大小
+					ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2); ctx.fill();
+					// 增加更多的噪點效果，並加大噪點
+					for(let i=0;i<8;i++){ 
+						ctx.beginPath(); 
+						ctx.arc(
+							pos.x + (Math.random()-0.5)*r*1.5, 
+							pos.y + (Math.random()-0.5)*r*1.5, 
+							Math.random()*10+5,  // 加大噪點大小
+							0,
+							Math.PI*2
+						); 
+						ctx.fill(); 
+					}
+				}
+
+				function scratchLine(a,b){
+					if(!a) { scratchDot(b); return; }
+					const dx = b.x - a.x, dy = b.y - a.y; 
+					const dist = Math.hypot(dx,dy);
+					const steps = Math.max(1, Math.floor(dist / 6));  // 減少步數使點更密集
+					for(let i=0;i<steps;i++){
+						const t = i/steps;
+						const x = a.x + dx*t + (Math.random()-0.5)*4;  // 增加隨機偏移
+						const y = a.y + dy*t + (Math.random()-0.5)*4;
+						ctx.beginPath();
+						const size = 20 + Math.random()*24;  // 增加刮除點的大小
+						ctx.arc(x,y,size,0,Math.PI*2);
+						ctx.fill();
+					}
+					// 加寬連接線條
+					ctx.beginPath(); 
+					ctx.moveTo(a.x,a.y); 
+					ctx.lineTo(b.x,b.y); 
+					ctx.lineWidth = 32;  // 加寬線條
+					ctx.stroke();
+				}
+
+				function checkReveal(){
+					// 計算透明像素比例 (alpha=0 表示已刮開)
+					try{
+						const img = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+						let cleared=0; for(let i=3;i<img.length;i+=4){ if(img[i]===0) cleared++; }
+						const total = canvas.width*canvas.height; const ratio = cleared/total;
+						if(ratio > 0.38) reveal(true);
+					}catch(err){
+						// 有些瀏覽器/情況可能會拒絕跨域或像素取樣，則依照已揭示標記處理
+						console.warn('checkReveal error', err); 
+					}
+				}
+
+				function reveal(auto, toggle){
+					if(revealed && toggle){ 
+						revealed = false;
+						resizeCanvas();
+						revealBtn.textContent = '直接顯示結果';
+						return;
+					}
+					if(!revealed) {
+						if(prize.text !== '再接再厲，明天見') {
+							modalBody.textContent = prize.text + (prize.big ? ' — 恭喜你！' : '');
+							modal.classList.add('show');
+							if(prize.big) makeConfetti();
+							saveRecord(prize);
+						}
+					}
+					revealed = true;
+					ctx.clearRect(0,0,canvas.width,canvas.height);
+					revealBtn.textContent = '回到刮除模式';
+				}
+
+				function makeConfetti(){
+					const colors = ['#ffdd57','#ffd36b','#ff7b7b','#7af3ff','#d4ff7a'];
+					for(let i=0;i<40;i++){
+						const p = document.createElement('div');p.className='p';
+						p.style.background = colors[i%colors.length];
+						p.style.left = Math.random()*100 + '%';
+						p.style.top = '-10vh';
+						p.style.width = (6+Math.random()*8)+'px'; p.style.height = (10+Math.random()*10)+'px';
+						p.style.transform = 'rotate('+Math.random()*360+'deg)';
+						p.style.animationDelay = (Math.random()*0.3)+'s';
+						p.style.opacity = '1';
+						p.style.borderRadius = (Math.random()*50)+'%';
+						p.style.zIndex = 998;
+						confettiRoot.appendChild(p);
+						setTimeout(()=>p.remove(),2600);
+					}
+				}
+
+				function reset(){
+					revealed = false;
+					modal.classList.remove('show');
+					pickPrize();
+					resizeCanvas(); // 這會調用 drawMask() 並正確設定 canvas 狀態
+					// 確保按鈕文字正確
+					revealBtn.textContent = '直接顯示結果';
+				}
+
+				// event wiring
+				window.addEventListener('resize', ()=>{ resizeCanvas(); });
+				canvas.addEventListener('pointerdown', pointerDown);
+				window.addEventListener('pointerup', pointerUp);
+				canvas.addEventListener('pointermove', pointerMove);
+				// touch fallback for older browsers
+				canvas.addEventListener('touchstart', (e)=>{ pointerDown(e); e.preventDefault(); }, {passive:false});
+				canvas.addEventListener('touchmove', (e)=>{ pointerMove(e); e.preventDefault(); }, {passive:false});
+
+				resetBtn.addEventListener('click', ()=>{ reset(); });
+				revealBtn.addEventListener('click', ()=>{ reveal(false, true); });
+				// keyboard shortcuts
+				window.addEventListener('keydown',(e)=>{
+					if(e.key.toLowerCase()==='r') reset();
+					if(e.key.toLowerCase()==='v') reveal(false);
+				});
+				closeModal.addEventListener('click', ()=>{ modal.classList.remove('show'); });
+
+				// history UI wiring
+				const historyToggle = document.getElementById('historyToggle');
+				const historyPanel = document.getElementById('historyPanel');
+				const historyList = document.getElementById('historyList');
+				const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+				const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+
+				function loadRecords(){
+					try{return JSON.parse(localStorage.getItem('scratch_records')||'[]')}catch(e){return []}
+				}
+
+				function saveRecord(pr){
+					// 不記錄"再接再厲，明天見"的結果
+					if(pr.text === '再接再厲，明天見') return;
+					
+					const arr = loadRecords();
+					const now = new Date().toISOString();
+					
+					// 查找是否已有相同獎品
+					const existingIndex = arr.findIndex(r => r.prize === pr.text);
+					if (existingIndex >= 0) {
+						// 如果找到相同獎品，更新計數和最新時間
+						const existing = arr[existingIndex];
+						existing.count = (existing.count || 1) + 1;
+						existing.lastAt = now;
+						// 將更新的項目移到最前面
+						arr.splice(existingIndex, 1);
+						arr.unshift(existing);
+					} else {
+						// 如果是新獎品，加入新記錄
+						arr.unshift({
+							prize: pr.text,
+							big: !!pr.big,
+							count: 1,
+							at: now,
+							lastAt: now
+						});
+					}
+					
+					if(arr.length>100) arr.pop();
+					localStorage.setItem('scratch_records', JSON.stringify(arr));
+					renderRecords();
+				}
+
+				function renderRecords(){
+					const arr = loadRecords();
+					if(!arr || arr.length===0){ historyList.innerHTML = '<li class="history-empty">尚無紀錄</li>'; return; }
+					historyList.innerHTML = arr.map(r=>{
+						const firstTime = new Date(r.at).toLocaleString();
+						const countText = r.count > 1 ? `<span class="r-count">×${r.count}</span>` : '';
+						const timeText = r.count > 1 
+							? `首次: ${firstTime}<br>最近: ${new Date(r.lastAt).toLocaleString()}`
+							: firstTime;
+						return `<li>
+							<div class="r-prize">
+								${r.prize}${r.big?'<span class="r-badge">★</span>':''}${countText}
+							</div>
+							<div class="r-time">${timeText}</div>
+						</li>`;
+					}).join('');
+				}
+
+				historyToggle.addEventListener('click', ()=>{ historyPanel.style.display = historyPanel.style.display==='none' ? 'block' : 'none'; renderRecords(); });
+				closeHistoryBtn.addEventListener('click', ()=>{ historyPanel.style.display='none'; });
+				clearHistoryBtn.addEventListener('click', ()=>{ localStorage.removeItem('scratch_records'); renderRecords(); });
+
+
+				// 初始化
+				pickPrize();
+				// 等待 DOM layout
+				requestAnimationFrame(()=>{ resizeCanvas(); });
+
+			})();
+		</script>
+	</body>
+</html>

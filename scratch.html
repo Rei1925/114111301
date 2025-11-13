@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>刮刮樂 - 入口頁</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:linear-gradient(180deg,#081018,#0f1216);color:#fff;font-family: 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif}
+      .card{background:linear-gradient(180deg,#112233,#0b1430);padding:28px;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,0.6);text-align:center;width:min(680px,94%)}
+      h1{margin:0 0 6px 0;color:var(--gold1)}
+      p{color:#f1dca0}
+      .actions{margin-top:18px;display:flex;gap:12px;justify-content:center}
+      .btn{background:linear-gradient(180deg,#ffdd66,#ffbf36);border:none;padding:12px 18px;border-radius:10px;font-weight:800;color:#3b1700;cursor:pointer}
+      a.btn{display:inline-block;text-decoration:none}
+      .muted{font-size:13px;color:#c9b887;margin-top:12px}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>豪華刮刮樂</h1>
+      <p>歡迎！請按下按鈕進入刮刮樂遊戲頁面。</p>
+      <div class="actions">
+        <a class="btn" href="first.html">前往遊戲</a>
+        <a class="btn" href="#history" onclick="document.getElementById('historyToggle')?.click();return false;">查看紀錄（頁內）</a>
+      </div>
+      <div class="muted">如果想要直接打開 HTML 檔案，請把此資料夾整個放到 web server 或直接在瀏覽器開啟此頁面。</div>
+    </div>
+  </body>
+</html>

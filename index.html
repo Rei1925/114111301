@@ -1,343 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 Rich & Famous Chat 💰</title>
+    <title>💲 億萬富翁的遊樂場 💲</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lobster&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        :root {
+            --gold: #FFD700; /* A brighter, more vibrant gold */
+            --dark-gold: #B8860B;
+            --glow-gold: #FFD700;
+            --black: #000000; /* Deeper black */
+            --card-bg: #1a1a1a;
+        }
 
         body {
-            background: #111;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('https://www.transparenttextures.com/patterns/classy-fabric.png');
-            font-family: 'Roboto', sans-serif;
+            background-color: var(--black);
+            background-image: 
+                /* Subtle diamond pattern */
+                radial-gradient(rgba(255, 215, 0, 0.05) 15%, transparent 16%),
+                radial-gradient(rgba(255, 215, 0, 0.05) 15%, transparent 16%),
+                /* Glitter effect */
+                radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 75% 75%, rgba(255, 215, 0, 0.08) 0%, transparent 30%);
+            background-size: 30px 30px, 30px 30px, 100% 100%, 100% 100%;
+            background-position: 0 0, 15px 15px, 0 0, 0 0;
+            font-family: 'Noto Sans TC', sans-serif;
             color: #fff;
             margin: 0;
-            padding: 0;
+            padding: 40px 20px;
             display: flex;
-            flex-direction: column; /* Align items vertically */
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden; /* Hide overflowing money */
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .money-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
         }
 
-        .money {
-            position: absolute;
-            top: -10%;
-            font-size: 2em;
-            user-select: none;
-            animation: fall linear infinite;
+        .main-title {
+            font-family: 'Lobster', cursive;
+            font-size: 5.5rem; /* Slightly larger */
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            text-shadow: 
+                0 0 8px var(--glow-gold),
+                0 0 20px var(--gold),
+                0 0 40px var(--dark-gold),
+                0 0 70px var(--dark-gold);
+            animation: flicker 2.5s infinite alternate;
         }
 
-        @keyframes fall {
-            to {
-                transform: translateY(110vh) rotate(360deg);
+        .subtitle {
+            font-size: 1.3rem;
+            color: #ddd;
+            margin-top: 10px;
+            letter-spacing: 3px;
+            font-style: italic;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                opacity: 1;
+                text-shadow:
+                    0 0 8px var(--glow-gold),
+                    0 0 20px var(--gold),
+                    0 0 40px var(--dark-gold),
+                    0 0 70px var(--dark-gold);
+            }
+            20%, 24%, 55% {
+                opacity: 0.8;
+                text-shadow: none;
             }
         }
 
-        .chat-container {
-            width: 90%;
-            max-width: 800px;
-            height: 80vh; /* Adjusted height */
-            border: 5px solid #DAA520;
+        .link-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 50px; /* Increased gap */
+            width: 100%;
+            max-width: 1300px;
+        }
+
+        .program-link {
+            background: linear-gradient(145deg, #2d2d2d, #1a1a1a);
+            border: 3px solid transparent;
             border-radius: 20px;
-            background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
-            box-shadow: 0 0 40px rgba(218, 165, 32, 0.5), 0 0 100px rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 1; /* Ensure chat is above background elements but below money */
-        }
-
-        .chat-header {
-            background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
-            padding: 20px;
-            text-align: center;
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5em;
-            color: #222;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-            border-bottom: 3px solid #DAA520;
-            letter-spacing: 2px;
-        }
-
-        .chat-window {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Custom scrollbar for the filthy rich */
-        .chat-window::-webkit-scrollbar {
-            width: 12px;
-        }
-        .chat-window::-webkit-scrollbar-track {
-            background: #222;
-        }
-        .chat-window::-webkit-scrollbar-thumb {
-            background-color: #DAA520;
-            border-radius: 20px;
-            border: 3px solid #222;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            max-width: 75%;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            padding: 15px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .message.user {
-            background: linear-gradient(to right, #DAA520, #B8860B);
-            color: #000;
-            align-self: flex-end;
-            border-top-right-radius: 0;
-        }
-
-        .message.bot {
-            background: #333;
-            color: #eee;
-            align-self: flex-start;
-            border-top-left-radius: 0;
-        }
-        
-        .message-content {
-            font-size: 1.1em;
-            word-wrap: break-word;
-        }
-
-        .message-timestamp {
-            font-size: 0.7em;
-            color: rgba(0,0,0,0.4);
-            align-self: flex-end;
-            margin-top: 5px;
-        }
-        
-        .message.bot .message-timestamp {
-            color: #888;
-        }
-
-        .chat-input-form {
-            display: flex;
-            padding: 20px;
-            background: #1a1a1a;
-            border-top: 3px solid #DAA520;
-        }
-
-        #message-input {
-            flex-grow: 1;
-            padding: 15px;
-            border: 2px solid #DAA520;
-            border-radius: 50px;
-            background: #222;
+            padding: 40px;
+            text-decoration: none;
             color: #fff;
-            font-size: 1.1em;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        #message-input:focus {
-            box-shadow: 0 0 15px rgba(218, 165, 32, 0.7);
-            border-color: #FFD700;
-        }
-
-        #send-button {
-            margin-left: 15px;
-            padding: 15px 30px;
-            border: none;
-            background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728);
-            color: #222;
-            font-size: 1.2em;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        #send-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(218, 165, 32, 0.8);
-        }
-
-        /* Black Card Styling */
-        .black-card {
-            width: 320px;
-            height: 200px;
-            background: linear-gradient(135deg, #222 0%, #111 100%);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #444;
-            font-family: 'Courier New', Courier, monospace;
-            z-index: 10;
-            position: fixed; /* Changed to fixed */
-            bottom: 0; /* Position at the bottom */
-            left: 50%;
-            transform: translateX(-50%) translateY(170px); /* Center and hide */
-            transition: transform 0.4s ease-in-out;
-            cursor: pointer;
-        }
-
-        .black-card:hover {
-            transform: translateX(-50%) translateY(0); /* Reveal on hover */
-        }
-
-        .black-card .card-chip {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #ffea9b, #DAA520);
-            border-radius: 5px;
-        }
-
-        .black-card .card-number {
-            color: #c0c0c0;
-            font-size: 1.5em;
-            letter-spacing: 3px;
-            margin-top: 30px;
-            text-shadow: 0 0 2px rgba(192, 192, 192, 0.3);
-        }
-
-        .black-card .card-holder-name {
-            color: #DAA520;
-            font-size: 1em;
-            margin-top: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            z-index: 1;
         }
         
-        .black-card .card-logo {
+        /* Animated gradient border */
+        .program-link::before {
+            content: '';
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5em;
-            color: #DAA520;
-            font-weight: 700;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                transparent,
+                rgba(255, 215, 0, 1),
+                transparent 30%
+            );
+            animation: rotate 4s linear infinite;
         }
+        
+        .program-link::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            100% {
+                transform: rotate(1turn);
+            }
+        }
+
+        .program-link:hover {
+            transform: translateY(-15px) scale(1.08);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.6), 0 25px 50px rgba(0,0,0,0.9);
+        }
+
+        .link-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .link-title {
+            font-family: 'Lobster', cursive;
+            font-size: 2.8rem; /* Larger title */
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+
+        .link-description {
+            font-size: 1.2rem;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
     </style>
 </head>
 <body>
-    <div class="money-container" id="money-container"></div>
 
-    <div class="chat-container">
-        <div class="chat-header">💰 Rich & Famous Chat 💰</div>
-        <div class="chat-window" id="chat-window">
-            <div class="message bot">
-                <div class="message-content">歡迎來到億萬富翁俱樂部。只有精英中的精英才能在這裡發言。</div>
-                <div class="message-timestamp">剛剛</div>
+    <header class="header">
+        <h1 class="main-title">💲 遊樂場 💲</h1>
+        <p class="subtitle">通往財富與榮耀的傳送門</p>
+    </header>
+
+    <main class="link-container">
+        <a href="chat.html" class="program-link" target="_blank" rel="noopener noreferrer">
+            <div class="link-content">
+                <h2 class="link-title">💰 億萬富翁聊天室</h2>
+                <p class="link-description">與全球頂級富豪進行一場關於金錢與權力的對話。</p>
             </div>
-        </div>
-        <form class="chat-input-form" id="chat-form">
-            <input type="text" id="message-input" placeholder="用金錢的味道發言..." autocomplete="off">
-            <button type="submit" id="send-button">發送</button>
-        </form>
-    </div>
+        </a>
 
-    <div class="black-card">
-        <div class="card-chip"></div>
-        <div class="card-number">**** **** **** 8888</div>
-        <div class="card-holder-name">MR. RICH & FAMOUS</div>
-        <div class="card-logo">ELITE</div>
-    </div>
-
-    <script>
-        const chatForm = document.getElementById('chat-form');
-        const messageInput = document.getElementById('message-input');
-        const chatWindow = document.getElementById('chat-window');
-        const moneyContainer = document.getElementById('money-container');
-
-        // --- Falling Money ---
-        function createMoney() {
-            const money = document.createElement('div');
-            money.classList.add('money');
-            
-            const moneyTypes = ['💰', '💵', '💎', '👑'];
-            money.innerText = moneyTypes[Math.floor(Math.random() * moneyTypes.length)];
-            
-            money.style.left = Math.random() * 100 + 'vw';
-            money.style.animationDuration = (Math.random() * 3 + 4) + 's'; // Fall duration 4-7s
-            money.style.animationDelay = Math.random() * 5 + 's'; // Start delay 0-5s
-            money.style.fontSize = (Math.random() * 1.5 + 1) + 'em';
-            
-            moneyContainer.appendChild(money);
-
-            // Remove money after it falls
-            setTimeout(() => {
-                money.remove();
-            }, 7000);
-        }
-
-        // Create a steady stream of money
-        setInterval(createMoney, 300);
-
-
-        // --- Chat Functionality ---
-        chatForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const messageText = messageInput.value.trim();
-
-            if (messageText) {
-                addMessage(messageText, 'user');
-                messageInput.value = '';
-                
-                // Simulate a bot response
-                setTimeout(botResponse, 1500);
-            }
-        });
-
-        function addMessage(text, sender) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender);
-
-            const contentElement = document.createElement('div');
-            contentElement.classList.add('message-content');
-            contentElement.textContent = text;
-
-            const timestampElement = document.createElement('div');
-            timestampElement.classList.add('message-timestamp');
-            timestampElement.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            messageElement.appendChild(contentElement);
-            messageElement.appendChild(timestampElement);
-            chatWindow.appendChild(messageElement);
-
-            // Scroll to the latest message
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function botResponse() {
-            const responses = [
-                "有趣。我的管家剛剛用純金的iPad Pro送來了下午茶。",
-                "說得好。這讓我想起了我在摩納哥遊艇上的時光。",
-                "哦？我剛買下了一座島，就因為我喜歡那裡的沙子顏色。",
-                "這話題配不上我的百萬名錶。下一個。",
-                "聽起來真『窮』。開個玩笑，繼續。",
-                "我用黑卡付錢的時候，服務員也是這麼說的。",
-                "讓我的私人助理記下這點。也許吧。"
-            ];
-            const response = responses[Math.floor(Math.random() * responses.length)];
-            addMessage(response, 'bot');
-        }
-    </script>
+        <a href="index02.html" class="program-link" target="_blank" rel="noopener noreferrer">
+            <div class="link-content">
+                <h2 class="link-title">🤑 暴富刮刮樂</h2>
+                <p class="link-description">試試您的手氣，一秒致富不是夢！</p>
+            </div>
+        </a>
+    </main>
 
 </body>
 </html>
